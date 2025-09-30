@@ -7,14 +7,21 @@ import (
 	"Go-PetStoreApp/repository"
 	"context"
 	"database/sql"
+
+	"github.com/go-playground/validator"
 )
 
 type PetServiceImpl struct {
 	PetRepository repository.PetRepository
 	DB *sql.DB
+	Validate *validator.Validate
 }
 
 func (s *PetServiceImpl) Create(ctx context.Context, r web.PetCreateRequest) web.PetResponse {
+	// Validate the struct
+	err := s.Validate.Struct(r)
+	helper.PanicIfError(err)
+
 	tx, err := s.DB.Begin()
 	helper.PanicIfError(err)
 	defer helper.CommitOrRollback(tx)
@@ -31,6 +38,10 @@ func (s *PetServiceImpl) Create(ctx context.Context, r web.PetCreateRequest) web
 }
 
 func (s *PetServiceImpl) Update(ctx context.Context, r web.PetUpdateRequest) web.PetResponse {
+	// Validate the struct
+	err := s.Validate.Struct(r)
+	helper.PanicIfError(err)
+
 	tx, err := s.DB.Begin()
 	helper.PanicIfError(err)
 	defer helper.CommitOrRollback(tx)
@@ -53,6 +64,7 @@ func (s *PetServiceImpl) Delete(ctx context.Context, petId int) {
 	helper.PanicIfError(err)
 	defer helper.CommitOrRollback(tx)
 
+	// Find pets first dont be empty
 	pet, err := s.PetRepository.FindById(ctx, tx, petId)
 	helper.PanicIfError(err)
 
