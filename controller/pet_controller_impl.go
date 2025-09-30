@@ -14,6 +14,12 @@ type PetControllerImpl struct{
 	PetService service.PetService
 }
 
+func NewPetController(petService service.PetService) PetController {
+	return &PetControllerImpl{
+		PetService: petService,
+	}
+}
+
 func (p *PetControllerImpl) Create(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	petCreateRequest := web.PetCreateRequest{}
 	helper.ReadFromRequest(r, &petCreateRequest)

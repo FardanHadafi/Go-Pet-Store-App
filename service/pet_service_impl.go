@@ -17,6 +17,14 @@ type PetServiceImpl struct {
 	Validate *validator.Validate
 }
 
+func NewPetService(petRepository repository.PetRepository, DB *sql.DB, validate *validator.Validate) PetService {
+	return &PetServiceImpl{
+		PetRepository: petRepository,
+		DB: DB,
+		Validate: validate,
+	}
+}
+
 func (s *PetServiceImpl) Create(ctx context.Context, r web.PetCreateRequest) web.PetResponse {
 	// Validate the struct
 	err := s.Validate.Struct(r)
