@@ -12,7 +12,7 @@ type PetRepository interface {
 	// UpdatePet - Update an existing pet
 	Update(ctx context.Context, tx *sql.Tx, pet domain.Pet) domain.Pet
 	// DeletePet - Delete a pet by ID
-	Delete(ctx context.Context, tx *sql.Tx, petId int)
+	Delete(ctx context.Context, tx *sql.Tx, pet domain.Pet)
 	// GetPetById - Get a pet by ID
 	FindById(ctx context.Context, tx *sql.Tx, petId int) (domain.Pet, error)
 	// GetAllPets - Get all pets
