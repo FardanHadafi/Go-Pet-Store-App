@@ -21,6 +21,13 @@ INSERT INTO pets (name, species, price) VALUES
 ('Tweety', 'bird', 89.99),
 ('Goldie', 'fish', 15.50);
 
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS species VARCHAR(100);
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS price DECIMAL(10, 2);
+
 SELECT * from pets;
 
 SELECT * from users;
+
+DELETE  from pets;
+
+delete from users;

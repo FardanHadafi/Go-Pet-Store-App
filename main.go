@@ -3,11 +3,14 @@ package main
 import (
 	"Go-PetStoreApp/app"
 	"Go-PetStoreApp/controller"
+	"Go-PetStoreApp/helper"
 	"Go-PetStoreApp/repository"
 	"Go-PetStoreApp/service"
+	"net/http"
 
 	"github.com/go-playground/validator"
 	"github.com/julienschmidt/httprouter"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -24,4 +27,12 @@ func main() {
 	router.GET("/api/pets/:petId", PetController.FindById)
 	router.PUT("/api/pets/:petId", PetController.Update)
 	router.DELETE("/api/pets/:petId", PetController.Delete)
+
+	server := http.Server{
+		Addr: "localhost:3000",
+		Handler: router,
+	}
+
+	err := server.ListenAndServe()
+	helper.PanicIfError(err)
 }

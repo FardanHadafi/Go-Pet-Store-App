@@ -17,20 +17,18 @@ func NewPetRepository() PetRepository {
 
 func (r *PetRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, pet domain.Pet) domain.Pet {
 	SQL := "INSERT INTO pets(name, species, price) VALUES($1, $2, $3) RETURNING id"
-
-	var id int
-	err := tx.QueryRowContext(ctx, SQL, pet.Name, pet.Species, pet.Price).Scan(&id)
+	
+	err := tx.QueryRowContext(ctx, SQL, pet.Name, pet.Species, pet.Price).Scan(&pet.ID)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create pet: %v", err))
 	}
 
-	pet.ID = id
 	return pet
 }
 
 func (r *PetRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, pet domain.Pet) domain.Pet {
-	SQL := "Update pets set name = $1 where id = $2"
-	_, err := tx.ExecContext(ctx, SQL, pet.Name, pet.ID)
+	SQL := "Update pets set name = $1, species = $2, price = $3 Where id = $4"
+	_, err := tx.ExecContext(ctx, SQL, pet.Name, pet.Species, pet.Price, pet.ID)
 	helper.PanicIfError(err)
 	return pet
 }
@@ -42,11 +40,11 @@ func (r *PetRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx, pet domain.P
 }
 
 func (r *PetRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, petId int) (domain.Pet, error) {
-	SQL := "select id, name from pets where id = $1"
+	SQL := "select id, name, species, price from pets where id = $1"
 	row := tx.QueryRowContext(ctx, SQL, petId)
 
 	pet := domain.Pet{}
-	err := row.Scan(&pet.ID, &pet.Name)
+	err := row.Scan(&pet.ID, &pet.Name, &pet.Species, &pet.Price)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -58,7 +56,7 @@ func (r *PetRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, petId int)
 }
 
 func (r *PetRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) []domain.Pet {
-	SQL := "select id, name from pets"
+	SQL := "select id, name, species, price from pets"
 	rows, err := tx.QueryContext(ctx, SQL)
 	helper.PanicIfError(err)
 	defer rows.Close()
@@ -66,9 +64,12 @@ func (r *PetRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) []domain.Pe
 	var pets []domain.Pet
 	for rows.Next() {
 		pet := domain.Pet{}
-		err := rows.Scan(&pet.ID, &pet.Name)
+		err := rows.Scan(&pet.ID, &pet.Name, &pet.Species, &pet.Price)
 		helper.PanicIfError(err)
 		pets = append(pets, pet)
 	}
+
+	err = rows.Err()
+	helper.PanicIfError(err)
 	return pets
 } 

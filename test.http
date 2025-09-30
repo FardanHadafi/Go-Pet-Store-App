@@ -1,0 +1,33 @@
+### GET ALL PETS
+GET http://localhost:3000/api/pets
+Accept: application/json
+
+### CREATE NEW PET
+POST http://localhost:3000/api/pets
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Fluffy",
+  "species": "cat",
+  "price": 299.99
+}
+
+### GET PETS BY ITS ID
+GET http://localhost:3000/api/pets/7
+Accept: application/json
+Content-Type: application/json
+
+### UPDATE PETS BY ITS ID
+PUT http://localhost:3000/api/pets/5
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "Buddy",
+  "species": "dog",
+  "price": 450.00
+}
+
+### DELETE PETS BY ITS ID
+DELETE http://localhost:3000/api/pets/7
