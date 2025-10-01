@@ -4,13 +4,37 @@ import (
 	"Go-PetStoreApp/helper"
 	"Go-PetStoreApp/model/web"
 	"net/http"
+
+	"github.com/go-playground/validator"
 )
 
 func ErrorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 	if notFoundError(w, r, err) {
 		return
 	}
+	if validationErrors(w, r, err) {
+		return
+	}
 	internalServerError(w, r, err)
+}
+
+func validationErrors(w http.ResponseWriter, r *http.Request, err interface{}) bool {
+	exception, ok := err.(validator.ValidationErrors)
+	if ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+
+		webResponse := web.WebResponse {
+			Code: http.StatusBadRequest,
+			Status: "BAD REQUEST",
+			Data: exception.Error(),
+	}
+
+	helper.WriteToResponseBody(w, webResponse)
+		return true
+	} else {
+		return false
+	}
 }
 
 func notFoundError(w http.ResponseWriter, r *http.Request, err interface{}) bool {

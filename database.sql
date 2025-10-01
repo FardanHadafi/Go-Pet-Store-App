@@ -29,5 +29,15 @@ SELECT * from pets;
 SELECT * from users;
 
 DELETE  from pets;
+-- Add the missing updated_at column
+ALTER TABLE users ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
-delete from users;
+-- Change email length
+ALTER TABLE users ALTER COLUMN email TYPE VARCHAR(255);
+
+-- Change created_at type
+ALTER TABLE users ALTER COLUMN created_at TYPE TIMESTAMP;
+
+-- Add indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);

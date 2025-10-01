@@ -8,9 +8,9 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "name": "Fluffy",
-  "species": "cat",
-  "price": 299.99
+  "name": "",
+  "species": "",
+  "price":
 }
 
 ### GET PETS BY ITS ID
@@ -19,14 +19,14 @@ Accept: application/json
 Content-Type: application/json
 
 ### UPDATE PETS BY ITS ID
-PUT http://localhost:3000/api/pets/5
+PUT http://localhost:3000/api/pets/8
 Accept: application/json
 Content-Type: application/json
 
 {
-  "name": "Buddy",
-  "species": "dog",
-  "price": 450.00
+  "name": "",
+  "species": "",
+  "price": 
 }
 
 ### DELETE PETS BY ITS ID

@@ -1,0 +1,201 @@
+### Base URL
+@baseUrl = http://localhost:3000/api
+
+### 1. REGISTER USER - Success
+POST {{baseUrl}}/users/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### 2. REGISTER USER - Another user
+POST {{baseUrl}}/users/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "johnpass123"
+}
+
+### 3. REGISTER USER - Duplicate username (should fail)
+POST {{baseUrl}}/users/register
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test2@example.com",
+  "password": "password123"
+}
+
+### 4. LOGIN WITH USERNAME - Success
+POST {{baseUrl}}/users/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test2@example.com",
+  "password": "password123"
+}
+
+### 5. LOGIN WITH EMAIL - Success (if supported)
+POST {{baseUrl}}/users/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### 6. LOGIN USER - Wrong password (should fail)
+POST {{baseUrl}}/users/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "wrongpassword"
+}
+
+### 7. LOGIN USER - Non-existent username (should fail)
+POST {{baseUrl}}/users/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "nonexistent",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### 8. LOGIN USER - Non-existent email (should fail)
+POST {{baseUrl}}/users/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "nonexistent@example.com",
+  "password": "password123"
+}
+
+### 9. FIND ALL USERS
+GET {{baseUrl}}/users
+Accept: application/json
+
+### 10. FIND USER BY ID - Success
+GET {{baseUrl}}/users/3
+Accept: application/json
+
+### 11. FIND USER BY ID - Non-existent user (should fail)
+GET {{baseUrl}}/users/999
+Accept: application/json
+
+### 12. UPDATE USER - Success
+PUT {{baseUrl}}/users/3
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser_updated",
+  "email": "updated@example.com"
+}
+
+### 13. UPDATE USER - Verify update worked
+GET {{baseUrl}}/users/3
+Accept: application/json
+
+### 14. CHANGE PASSWORD - Success (with OldPassword and NewPassword)
+PATCH {{baseUrl}}/users/3/password
+Accept: application/json
+Content-Type: application/json
+
+{
+  "oldPassword": "password123",
+  "newPassword": "newpassword123"
+}
+
+### 15. LOGIN WITH NEW PASSWORD - Verify password change (using username)
+POST {{baseUrl}}/users/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "username": "testuser_updated",
+  "password": "newpassword123",
+  "email": "updated@example.com"
+}
+
+### 16. LOGIN WITH NEW PASSWORD - Verify password change (using email)
+POST {{baseUrl}}/users/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "updated@example.com",
+  "password": "newpassword123"
+}
+
+### 17. CHANGE PASSWORD - Wrong old password (should fail)
+PATCH {{baseUrl}}/users/1/password
+Accept: application/json
+Content-Type: application/json
+
+{
+  "oldPassword": "wrongoldpassword",
+  "newPassword": "anothernewpassword"
+}
+
+### 18. CHANGE PASSWORD - Missing old password (should fail)
+PATCH {{baseUrl}}/users/1/password
+Accept: application/json
+Content-Type: application/json
+
+{
+  "newPassword": "newpassword123"
+}
+
+### 19. CHANGE PASSWORD - Missing new password (should fail)
+PATCH {{baseUrl}}/users/1/password
+Accept: application/json
+Content-Type: application/json
+
+{
+  "oldPassword": "newpassword123"
+}
+
+### 20. CHANGE PASSWORD - Non-existent user (should fail)
+PATCH {{baseUrl}}/users/999/password
+Accept: application/json
+Content-Type: application/json
+
+{
+  "oldPassword": "somepassword",
+  "newPassword": "newpassword123"
+}
+
+### 21. DELETE USER - Success (delete second user)
+DELETE {{baseUrl}}/users/4
+Accept: application/json
+
+### 22. VERIFY USER DELETED - Should fail
+GET {{baseUrl}}/users/2
+Accept: application/json
+
+### 23. DELETE USER - Non-existent user (should fail)
+DELETE {{baseUrl}}/users/999
+Accept: application/json
+
+### 24. FINAL STATE - Get all users
+GET {{baseUrl}}/users
+Accept: application/json
