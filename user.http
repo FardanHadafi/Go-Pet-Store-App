@@ -7,30 +7,19 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser1",
+  "username": "testuser3",
   "password": "password123",
   "email": "test@example.com"
 }
 
-### 2. REGISTER USER - Another user
+### 2. REGISTER USER - Duplicate username (should fail)
 POST {{baseUrl}}/users/register
 Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "john_doe",
-  "email": "john@example.com",
-  "password": "johnpass123"
-}
-
-### 3. REGISTER USER - Duplicate username (should fail)
-POST {{baseUrl}}/users/register
-Accept: application/json
-Content-Type: application/json
-
-{
-  "username": "testuser1",
-  "email": "test2@example.com",
+  "username": "testuser3",
+  "email": "test@example.com",
   "password": "password123"
 }
 
@@ -40,7 +29,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser1",
+  "username": "testuser3",
   "password": "password123"
 }
 
@@ -50,8 +39,8 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser1",
-  "email": "test@example.com",
+  "username": "testuser3",
+  "email": "test@example.com", // BUG can login with same email, validate duplicate email
   "password": "password123"
 }
 
@@ -61,7 +50,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser1",
+  "username": "testuser3",
   "email": "test@example.com",
   "password": "wrongpassword"
 }
@@ -93,7 +82,7 @@ GET {{baseUrl}}/users
 Accept: application/json
 
 ### 10. FIND USER BY ID - Success
-GET {{baseUrl}}/users/8
+GET {{baseUrl}}/users/11
 Accept: application/json
 
 ### 11. FIND USER BY ID - Non-existent user (should fail)
@@ -101,27 +90,27 @@ GET {{baseUrl}}/users/999
 Accept: application/json
 
 ### 12. UPDATE USER - Success
-PUT {{baseUrl}}/users/8
+PUT {{baseUrl}}/users/11
 Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser_updated",
-  "email": "updated@example.com"
+  "username": "testuser_updated2",
+  "email": "updated2@example.com"
 }
 
 ### 13. UPDATE USER - Verify update worked
-GET {{baseUrl}}/users/8
+GET {{baseUrl}}/users/11
 Accept: application/json
 
 ### 14. CHANGE PASSWORD - Success (with OldPassword and NewPassword)
-PATCH {{baseUrl}}/users/8/password
+PATCH {{baseUrl}}/users/11/password
 Accept: application/json
 Content-Type: application/json
 
 {
   "old_password": "password123",
-  "new_password": "newpassword123"
+  "new_password": "newpassword12345"
 }
 
 ### 15. LOGIN WITH NEW PASSWORD - Verify password change (using username)
@@ -130,12 +119,12 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser_updated",
-  "password": "newpassword123",
+  "username": "testuser_updated2",
+  "password": "newpassword12345"
 }
 
 ### 16. CHANGE PASSWORD - Wrong old password (should fail)
-PATCH {{baseUrl}}/users/8/password
+PATCH {{baseUrl}}/users/11/password
 Accept: application/json
 Content-Type: application/json
 
@@ -155,11 +144,11 @@ Content-Type: application/json
 }
 
 ### 18. DELETE USER - Success (delete second user)
-DELETE {{baseUrl}}/users/7
+DELETE {{baseUrl}}/users/11
 Accept: application/json
 
 ### 19. VERIFY USER DELETED - Should fail
-GET {{baseUrl}}/users/2
+GET {{baseUrl}}/users/11
 Accept: application/json
 
 ### 20. DELETE USER - Non-existent user (should fail)

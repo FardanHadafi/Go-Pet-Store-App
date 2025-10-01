@@ -107,7 +107,7 @@ func (uc *UserControllerImpl) ChangePassword(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }
 
 // Delete handles user deletion
