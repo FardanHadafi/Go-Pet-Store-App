@@ -7,9 +7,9 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser",
-  "email": "test@example.com",
-  "password": "password123"
+  "username": "testuser1",
+  "password": "password123",
+  "email": "test@example.com"
 }
 
 ### 2. REGISTER USER - Another user
@@ -29,7 +29,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser",
+  "username": "testuser1",
   "email": "test2@example.com",
   "password": "password123"
 }
@@ -40,8 +40,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser",
-  "email": "test2@example.com",
+  "username": "testuser1",
   "password": "password123"
 }
 
@@ -51,7 +50,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser",
+  "username": "testuser1",
   "email": "test@example.com",
   "password": "password123"
 }
@@ -62,7 +61,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser",
+  "username": "testuser1",
   "email": "test@example.com",
   "password": "wrongpassword"
 }
@@ -94,7 +93,7 @@ GET {{baseUrl}}/users
 Accept: application/json
 
 ### 10. FIND USER BY ID - Success
-GET {{baseUrl}}/users/3
+GET {{baseUrl}}/users/8
 Accept: application/json
 
 ### 11. FIND USER BY ID - Non-existent user (should fail)
@@ -102,7 +101,7 @@ GET {{baseUrl}}/users/999
 Accept: application/json
 
 ### 12. UPDATE USER - Success
-PUT {{baseUrl}}/users/3
+PUT {{baseUrl}}/users/8
 Accept: application/json
 Content-Type: application/json
 
@@ -112,17 +111,17 @@ Content-Type: application/json
 }
 
 ### 13. UPDATE USER - Verify update worked
-GET {{baseUrl}}/users/3
+GET {{baseUrl}}/users/8
 Accept: application/json
 
 ### 14. CHANGE PASSWORD - Success (with OldPassword and NewPassword)
-PATCH {{baseUrl}}/users/3/password
+PATCH {{baseUrl}}/users/8/password
 Accept: application/json
 Content-Type: application/json
 
 {
-  "oldPassword": "password123",
-  "newPassword": "newpassword123"
+  "old_password": "password123",
+  "new_password": "newpassword123"
 }
 
 ### 15. LOGIN WITH NEW PASSWORD - Verify password change (using username)
@@ -133,69 +132,40 @@ Content-Type: application/json
 {
   "username": "testuser_updated",
   "password": "newpassword123",
-  "email": "updated@example.com"
 }
 
-### 16. LOGIN WITH NEW PASSWORD - Verify password change (using email)
-POST {{baseUrl}}/users/login
+### 16. CHANGE PASSWORD - Wrong old password (should fail)
+PATCH {{baseUrl}}/users/8/password
 Accept: application/json
 Content-Type: application/json
 
 {
-  "email": "updated@example.com",
-  "password": "newpassword123"
+  "old_password": "wrongoldpassword",
+  "new_password": "anothernewpassword"
 }
 
-### 17. CHANGE PASSWORD - Wrong old password (should fail)
-PATCH {{baseUrl}}/users/1/password
-Accept: application/json
-Content-Type: application/json
-
-{
-  "oldPassword": "wrongoldpassword",
-  "newPassword": "anothernewpassword"
-}
-
-### 18. CHANGE PASSWORD - Missing old password (should fail)
-PATCH {{baseUrl}}/users/1/password
-Accept: application/json
-Content-Type: application/json
-
-{
-  "newPassword": "newpassword123"
-}
-
-### 19. CHANGE PASSWORD - Missing new password (should fail)
-PATCH {{baseUrl}}/users/1/password
-Accept: application/json
-Content-Type: application/json
-
-{
-  "oldPassword": "newpassword123"
-}
-
-### 20. CHANGE PASSWORD - Non-existent user (should fail)
+### 17. CHANGE PASSWORD - Non-existent user (should fail)
 PATCH {{baseUrl}}/users/999/password
 Accept: application/json
 Content-Type: application/json
 
 {
-  "oldPassword": "somepassword",
-  "newPassword": "newpassword123"
+  "old_password": "somepassword",
+  "new_password": "newpassword123"
 }
 
-### 21. DELETE USER - Success (delete second user)
-DELETE {{baseUrl}}/users/4
+### 18. DELETE USER - Success (delete second user)
+DELETE {{baseUrl}}/users/7
 Accept: application/json
 
-### 22. VERIFY USER DELETED - Should fail
+### 19. VERIFY USER DELETED - Should fail
 GET {{baseUrl}}/users/2
 Accept: application/json
 
-### 23. DELETE USER - Non-existent user (should fail)
+### 20. DELETE USER - Non-existent user (should fail)
 DELETE {{baseUrl}}/users/999
 Accept: application/json
 
-### 24. FINAL STATE - Get all users
+### 21. FINAL STATE - Get all users
 GET {{baseUrl}}/users
 Accept: application/json

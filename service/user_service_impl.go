@@ -131,13 +131,13 @@ func (s *UserServiceImpl) Login(ctx context.Context, request web.UserLoginReques
 
     user, err := s.UserRepository.FindByUsername(ctx, tx, request.Username)
     if err != nil {
-        return web.AuthResponse{}, errors.New("invalid email or password")
+        return web.AuthResponse{}, errors.New("invalid username or password")
     }
 
     // Compare password
     err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(request.Password))
     if err != nil {
-        return web.AuthResponse{}, errors.New("invalid email or password")
+        return web.AuthResponse{}, errors.New("invalid username or password")
     }
 
     // Generate JWT token
