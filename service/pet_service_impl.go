@@ -1,6 +1,7 @@
 package service
 
 import (
+	"Go-PetStoreApp/exception"
 	"Go-PetStoreApp/helper"
 	"Go-PetStoreApp/model/domain"
 	"Go-PetStoreApp/model/web"
@@ -56,7 +57,9 @@ func (s *PetServiceImpl) Update(ctx context.Context, r web.PetUpdateRequest) web
 
 	// Find pets first dont be empty
 	pet, err := s.PetRepository.FindById(ctx, tx, r.Id)
-	helper.PanicIfError(err)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
 
 	pet.Name = r.Name
 	pet.Species = r.Species
@@ -74,7 +77,9 @@ func (s *PetServiceImpl) Delete(ctx context.Context, petId int) {
 
 	// Find pets first dont be empty
 	pet, err := s.PetRepository.FindById(ctx, tx, petId)
-	helper.PanicIfError(err)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
 
 	s.PetRepository.Delete(ctx, tx, pet)
 }
@@ -85,7 +90,9 @@ func (s *PetServiceImpl) FindById(ctx context.Context, petId int) web.PetRespons
 	defer helper.CommitOrRollback(tx)
 
 	pet, err := s.PetRepository.FindById(ctx, tx, petId)
-	helper.PanicIfError(err)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
 
 	return helper.ToPetResponse(pet)
 }

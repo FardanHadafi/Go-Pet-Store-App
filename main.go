@@ -3,6 +3,7 @@ package main
 import (
 	"Go-PetStoreApp/app"
 	"Go-PetStoreApp/controller"
+	"Go-PetStoreApp/exception"
 	"Go-PetStoreApp/helper"
 	"Go-PetStoreApp/repository"
 	"Go-PetStoreApp/service"
@@ -27,6 +28,8 @@ func main() {
 	router.GET("/api/pets/:petId", PetController.FindById)
 	router.PUT("/api/pets/:petId", PetController.Update)
 	router.DELETE("/api/pets/:petId", PetController.Delete)
+
+	router.PanicHandler = exception.ErrorHandler
 
 	server := http.Server{
 		Addr: "localhost:3000",
