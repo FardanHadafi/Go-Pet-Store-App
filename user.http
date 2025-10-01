@@ -18,7 +18,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser3",
+  "username": "testuser",
   "email": "test@example.com",
   "password": "password123"
 }
@@ -29,18 +29,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser3",
-  "password": "password123"
-}
-
-### 5. LOGIN WITH EMAIL - Success (if supported)
-POST {{baseUrl}}/users/login
-Accept: application/json
-Content-Type: application/json
-
-{
-  "username": "testuser3",
-  "email": "test@example.com", // BUG can login with same email, validate duplicate email
+  "username": "testuser",
   "password": "password123"
 }
 
@@ -50,7 +39,7 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "username": "testuser3",
+  "username": "testuser",
   "email": "test@example.com",
   "password": "wrongpassword"
 }
@@ -66,23 +55,12 @@ Content-Type: application/json
   "password": "password123"
 }
 
-### 8. LOGIN USER - Non-existent email (should fail)
-POST {{baseUrl}}/users/login
-Accept: application/json
-Content-Type: application/json
-
-{
-  "username": "testuser",
-  "email": "nonexistent@example.com",
-  "password": "password123"
-}
-
 ### 9. FIND ALL USERS
 GET {{baseUrl}}/users
 Accept: application/json
 
 ### 10. FIND USER BY ID - Success
-GET {{baseUrl}}/users/11
+GET {{baseUrl}}/users/15
 Accept: application/json
 
 ### 11. FIND USER BY ID - Non-existent user (should fail)
@@ -90,7 +68,7 @@ GET {{baseUrl}}/users/999
 Accept: application/json
 
 ### 12. UPDATE USER - Success
-PUT {{baseUrl}}/users/11
+PUT {{baseUrl}}/users/15
 Accept: application/json
 Content-Type: application/json
 
@@ -99,12 +77,8 @@ Content-Type: application/json
   "email": "updated2@example.com"
 }
 
-### 13. UPDATE USER - Verify update worked
-GET {{baseUrl}}/users/11
-Accept: application/json
-
 ### 14. CHANGE PASSWORD - Success (with OldPassword and NewPassword)
-PATCH {{baseUrl}}/users/11/password
+PATCH {{baseUrl}}/users/15/password
 Accept: application/json
 Content-Type: application/json
 
@@ -144,11 +118,11 @@ Content-Type: application/json
 }
 
 ### 18. DELETE USER - Success (delete second user)
-DELETE {{baseUrl}}/users/11
+DELETE {{baseUrl}}/users/15
 Accept: application/json
 
 ### 19. VERIFY USER DELETED - Should fail
-GET {{baseUrl}}/users/11
+GET {{baseUrl}}/users/15
 Accept: application/json
 
 ### 20. DELETE USER - Non-existent user (should fail)

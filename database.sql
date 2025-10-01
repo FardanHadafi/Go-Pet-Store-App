@@ -41,3 +41,6 @@ ALTER TABLE users ALTER COLUMN created_at TYPE TIMESTAMP;
 -- Add indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+
+ALTER TABLE users
+ADD CONSTRAINT unique_email UNIQUE (email);
