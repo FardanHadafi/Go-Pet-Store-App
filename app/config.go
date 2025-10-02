@@ -16,25 +16,25 @@ type Config struct {
 	DBName       string
 	DBSSLMode    string
 	JWTSecretKey string
-	TokenExpiry  int // in hours
+	TokenExpiry  int // hours
 }
 
-// LoadConfig loads environment variables into Config struct
+// LoadConfig loads .env and env vars; fails fast if JWT secret missing.
 func LoadConfig() *Config {
-	_ = godotenv.Load() // don’t panic if .env not found, system vars might exist
+	_ = godotenv.Load()
 
-	// Token Expiry
-	expiryStr := os.Getenv("TOKEN_EXPIRATION_HOURS")
-	expiry, err := strconv.Atoi(expiryStr)
-	if err != nil || expiry <= 0 {
-		log.Println("⚠️ TOKEN_EXPIRATION_HOURS not set or invalid, defaulting to 24h")
-		expiry = 24
+	expiry := 24
+	if s := os.Getenv("TOKEN_EXPIRATION_HOURS"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v > 0 {
+			expiry = v
+		} else {
+			log.Println("invalid TOKEN_EXPIRATION_HOURS, defaulting to 24")
+		}
 	}
 
-	// JWT Secret
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {
-		log.Fatal("❌ JWT_SECRET_KEY must be set in environment variables")
+		log.Fatal("JWT_SECRET_KEY must be set")
 	}
 
 	return &Config{

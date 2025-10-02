@@ -6,9 +6,9 @@ import (
 )
 
 type PetService interface {
-	Create(ctx context.Context, r web.PetCreateRequest, userID int) web.PetResponse
-	Update(ctx context.Context, r web.PetUpdateRequest) web.PetResponse
-	Delete(ctx context.Context, petId int)
-	FindById(ctx context.Context, petId int) web.PetResponse
-	FindAll(ctx context.Context, userID int) []web.PetResponse
+	Create(ctx context.Context, req web.PetCreateRequest, userID int) (web.PetResponse, error)
+	FindAllByUser(ctx context.Context, userID, page, limit int, species string) ([]web.PetResponse, int, error)
+	FindById(ctx context.Context, petID int, userID int) (web.PetResponse, error)
+	Update(ctx context.Context, req web.PetUpdateRequest, userID int) (web.PetResponse, error)
+	Delete(ctx context.Context, petID int, userID int) error
 }

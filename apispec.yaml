@@ -1,8 +1,12 @@
 openapi: 3.0.0
 info:
   title: Simple Pet Store API
-  version: 1.0.0
-  description: A simple API to manage pets in a pet store with JWT authentication
+  version: 1.1.0
+  description: >
+    A simple API to manage pets in a pet store with JWT authentication.
+    Includes role-based access control (RBAC): 
+    - `user` can only manage their own pets
+    - `admin` can view/manage all users and pets.
   contact:
     name: API support
     email: fardanhadafi@example.com
@@ -14,8 +18,7 @@ paths:
   /auth/register:
     post:
       summary: Register a new user
-      tags:
-        - Authentication
+      tags: [Authentication]
       requestBody:
         required: true
         content:
@@ -37,8 +40,7 @@ paths:
   /auth/login:
     post:
       summary: Login user
-      tags:
-        - Authentication
+      tags: [Authentication]
       requestBody:
         required: true
         content:
@@ -55,14 +57,44 @@ paths:
         "401":
           description: Invalid credentials
 
+  /auth/refresh:
+    post:
+      summary: Refresh JWT token
+      tags: [Authentication]
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid or expired token
+
   /pets:
     get:
       summary: Get all pets
-      description: Returns a list of all pets in the store
-      tags:
-        - Pets
-      security:
-        - BearerAuth: []
+      description: >
+        Returns a list of pets. 
+        - Normal users only see their own pets. 
+        - Admins can pass `owner_id` query to filter by user or see all.
+      tags: [Pets]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: species
+          in: query
+          schema: { type: string }
+        - name: owner_id
+          in: query
+          schema: { type: integer }
+          description: Admin-only. Filter pets by owner ID.
       responses:
         "200":
           description: Successful response
@@ -70,214 +102,159 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: "#/components/schemas/Pet"
-        "401":
-          description: Unauthorized
-        "500":
-          description: Internal server error
+                items: { $ref: "#/components/schemas/Pet" }
+        "401": { description: Unauthorized }
 
     post:
       summary: Add a new pet
-      description: Add a new pet to the store
-      tags:
-        - Pets
-      security:
-        - BearerAuth: []
+      tags: [Pets]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/NewPet"
+            schema: { $ref: "#/components/schemas/NewPet" }
       responses:
         "201":
-          description: Pet created successfully
+          description: Pet created
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Pet"
-        "400":
-          description: Invalid input
-        "401":
-          description: Unauthorized
+              schema: { $ref: "#/components/schemas/Pet" }
+        "400": { description: Invalid input }
 
   /pets/{petId}:
     get:
       summary: Get a pet by ID
-      description: Returns a single pet by its ID
-      tags:
-        - Pets
-      security:
-        - BearerAuth: []
+      tags: [Pets]
+      security: [{ BearerAuth: [] }]
       parameters:
         - name: petId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         "200":
-          description: Successful response
+          description: Pet found
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Pet"
-        "401":
-          description: Unauthorized
-        "404":
-          description: Pet not found
+              schema: { $ref: "#/components/schemas/Pet" }
+        "404": { description: Pet not found }
 
     put:
       summary: Update a pet
-      description: Update an existing pet's information
-      tags:
-        - Pets
-      security:
-        - BearerAuth: []
+      tags: [Pets]
+      security: [{ BearerAuth: [] }]
       parameters:
         - name: petId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/NewPet"
+            schema: { $ref: "#/components/schemas/NewPet" }
       responses:
         "200":
-          description: Pet updated successfully
+          description: Pet updated
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Pet"
-        "401":
-          description: Unauthorized
-        "404":
-          description: Pet not found
+              schema: { $ref: "#/components/schemas/Pet" }
 
     delete:
       summary: Delete a pet
-      description: Remove a pet from the store
-      tags:
-        - Pets
-      security:
-        - BearerAuth: []
+      tags: [Pets]
+      security: [{ BearerAuth: [] }]
       parameters:
         - name: petId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
-        "204":
-          description: Pet deleted successfully
-        "401":
-          description: Unauthorized
-        "404":
-          description: Pet not found
+        "204": { description: Pet deleted }
+
+  /admin/users:
+    get:
+      summary: List all users (admin only)
+      tags: [Admin]
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: All users listed
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/UserResponse" }
+        "403": { description: Forbidden (not admin) }
+
+  /admin/pets:
+    get:
+      summary: List all pets (admin only)
+      tags: [Admin]
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: All pets listed
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Pet" }
+        "403": { description: Forbidden (not admin) }
 
 components:
   schemas:
     Pet:
       type: object
-      required:
-        - id
-        - name
-        - species
-        - price
       properties:
-        id:
-          type: integer
-          description: Unique identifier for the pet
-          example: 1
-        name:
-          type: string
-          description: Name of the pet
-          example: "Fluffy"
-        species:
-          type: string
-          description: Species of the pet
-          enum: [dog, cat, bird, fish]
-          example: "cat"
-        price:
-          type: number
-          format: float
-          description: Price in USD
-          minimum: 0
-          example: 299.99
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Fluffy" }
+        species: { type: string, example: "cat" }
+        price: { type: number, format: float, example: 299.99 }
+        ownerId: { type: integer, example: 1 }
 
     NewPet:
       type: object
-      required:
-        - name
-        - species
-        - price
+      required: [name, species, price]
       properties:
-        name:
-          type: string
-          description: Name of the pet
-          example: "Fluffy"
-        species:
-          type: string
-          description: Species of the pet
-          enum: [dog, cat, bird, fish]
-          example: "cat"
-        price:
-          type: number
-          format: float
-          description: Price in USD
-          minimum: 0
-          example: 299.99
+        name: { type: string, example: "Fluffy" }
+        species: { type: string, example: "dog" }
+        price: { type: number, format: float, example: 500.00 }
 
     RegisterRequest:
       type: object
-      required:
-        - username
-        - password
-        - email
+      required: [username, email, password]
       properties:
-        username:
-          type: string
-          example: "john_doe"
+        username: { type: string, example: "john_doe" }
+        email: { type: string, format: email, example: "john@example.com" }
         password:
-          type: string
-          format: password
-          example: "securepassword123"
-        email:
-          type: string
-          format: email
-          example: "john@example.com"
+          { type: string, format: password, example: "securepassword123" }
 
     LoginRequest:
       type: object
-      required:
-        - username
-        - password
+      required: [username, password]
       properties:
-        username:
-          type: string
-          example: "john_doe"
+        username: { type: string, example: "john_doe" }
         password:
-          type: string
-          format: password
-          example: "securepassword123"
+          { type: string, format: password, example: "securepassword123" }
 
     AuthResponse:
       type: object
       properties:
-        token:
-          type: string
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        username:
-          type: string
-          example: "john_doe"
-        message:
-          type: string
-          example: "Login successful"
+        token: { type: string, example: "eyJhbGciOi..." }
+        user:
+          $ref: "#/components/schemas/UserResponse"
+
+    UserResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        email: { type: string }
+        role: { type: string, example: "user" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
   securitySchemes:
     BearerAuth:

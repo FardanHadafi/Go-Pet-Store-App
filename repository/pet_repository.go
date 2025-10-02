@@ -7,14 +7,9 @@ import (
 )
 
 type PetRepository interface {
-	// CreatePet - Create a new pet
 	Create(ctx context.Context, tx *sql.Tx, pet domain.Pet) domain.Pet
-	// UpdatePet - Update an existing pet
+	FindById(ctx context.Context, tx *sql.Tx, id int) (domain.Pet, error)
+	FindAllWithFilterByUser(ctx context.Context, tx *sql.Tx, userID, limit, offset int, species string) ([]domain.Pet, int)
 	Update(ctx context.Context, tx *sql.Tx, pet domain.Pet) domain.Pet
-	// DeletePet - Delete a pet by ID
-	Delete(ctx context.Context, tx *sql.Tx, pet domain.Pet)
-	// GetPetById - Get a pet by ID
-	FindById(ctx context.Context, tx *sql.Tx, petId int) (domain.Pet, error)
-	// GetAllPets - Get all pets
-	FindAll(ctx context.Context, tx *sql.Tx, userID int) []domain.Pet
+	Delete(ctx context.Context, tx *sql.Tx, id int)
 }

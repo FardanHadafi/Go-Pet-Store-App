@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"Go-PetStoreApp/helper"
 	"Go-PetStoreApp/middleware"
 	"Go-PetStoreApp/model/web"
 	"Go-PetStoreApp/service"
@@ -27,271 +26,190 @@ func NewUserController(userService service.UserService) *UserControllerImpl {
 	}
 }
 
-// Register handles user registration (PUBLIC)
 func (uc *UserControllerImpl) Register(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var request web.UserRegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	var req web.UserRegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
-	if err := uc.validator.Struct(request); err != nil {
+	if err := uc.validator.Struct(req); err != nil {
 		uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
 		return
 	}
-
-	response, err := uc.userService.Register(r.Context(), request)
+	resp, err := uc.userService.Register(r.Context(), req)
 	if err != nil {
-		if strings.Contains(err.Error(), "already registered") || 
-		  strings.Contains(err.Error(), "already taken") {
-			uc.writeErrorResponse(w, err.Error(), http.StatusConflict)
-			return
-		}
 		uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	uc.writeJSONResponse(w, response, http.StatusCreated)
+	uc.writeJSONResponse(w, resp, http.StatusCreated)
 }
 
-// Login handles user authentication (PUBLIC)
 func (uc *UserControllerImpl) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	var request web.UserLoginRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	var req web.UserLoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
-	if err := uc.validator.Struct(request); err != nil {
+	if err := uc.validator.Struct(req); err != nil {
 		uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
 		return
 	}
-
-	response, err := uc.userService.Login(r.Context(), request)
+	resp, err := uc.userService.Login(r.Context(), req)
 	if err != nil {
 		uc.writeErrorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-
-	uc.writeJSONResponse(w, response, http.StatusOK)
+	uc.writeJSONResponse(w, resp, http.StatusOK)
 }
 
-// Update handles user profile updates (PROTECTED - users can only update their own profile)
 func (uc *UserControllerImpl) Update(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// Get authenticated user ID from context
 	authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
 	if !ok {
 		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
-	// Get target user ID from URL
 	targetUserID, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
 		uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-
-	// Check if user is trying to update their own profile
 	if authenticatedUserID != targetUserID {
-		uc.writeErrorResponse(w, "Forbidden: You can only update your own profile", http.StatusForbidden)
+		uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
 		return
 	}
-
-	var request web.UserUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	var req web.UserUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
-	request.Id = targetUserID
-
-	if err := uc.validator.Struct(request); err != nil {
+	req.Id = targetUserID
+	if err := uc.validator.Struct(req); err != nil {
 		uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
 		return
 	}
-
-	response, err := uc.userService.Update(r.Context(), request)
+	resp, err := uc.userService.Update(r.Context(), req)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			uc.writeErrorResponse(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		if strings.Contains(err.Error(), "already taken") {
-			uc.writeErrorResponse(w, err.Error(), http.StatusConflict)
-			return
-		}
 		uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	uc.writeJSONResponse(w, response, http.StatusOK)
+	uc.writeJSONResponse(w, resp, http.StatusOK)
 }
 
-// ChangePassword handles password changes (PROTECTED - users can only change their own password)
 func (uc *UserControllerImpl) ChangePassword(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// Get authenticated user ID from context
 	authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
 	if !ok {
 		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
-	// Get target user ID from URL
 	targetUserID, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
 		uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-
-	// Check if user is trying to change their own password
 	if authenticatedUserID != targetUserID {
-		uc.writeErrorResponse(w, "Forbidden: You can only change your own password", http.StatusForbidden)
+		uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
 		return
 	}
-
-	var request web.UserChangePasswordRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	var req web.UserChangePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
-	request.Id = targetUserID
-
-	if err := uc.validator.Struct(request); err != nil {
+	req.Id = targetUserID
+	if err := uc.validator.Struct(req); err != nil {
 		uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
 		return
 	}
-
-	if err := uc.userService.ChangePassword(r.Context(), request); err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			uc.writeErrorResponse(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		if strings.Contains(err.Error(), "incorrect") {
-			uc.writeErrorResponse(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
+	if err := uc.userService.ChangePassword(r.Context(), req); err != nil {
 		uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	uc.writeSuccessResponse(w, "Password changed successfully")
+	uc.writeJSONResponse(w, map[string]string{"message": "password changed"}, http.StatusOK)
 }
 
-// Delete handles user deletion (PROTECTED - users can only delete their own account)
 func (uc *UserControllerImpl) Delete(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// Get authenticated user ID from context
 	authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
 	if !ok {
 		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
-	// Get target user ID from URL
 	targetUserID, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
 		uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-
-	// Check if user is trying to delete their own account
 	if authenticatedUserID != targetUserID {
-		uc.writeErrorResponse(w, "Forbidden: You can only delete your own account", http.StatusForbidden)
+		uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
 		return
 	}
-
 	if err := uc.userService.Delete(r.Context(), targetUserID); err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			uc.writeErrorResponse(w, err.Error(), http.StatusNotFound)
-			return
-		}
 		uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// FindById retrieves a user by ID (PROTECTED)
 func (uc *UserControllerImpl) FindById(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	userID, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
 		uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-
-	response, err := uc.userService.FindById(r.Context(), userID)
+	resp, err := uc.userService.FindById(r.Context(), userID)
 	if err != nil {
 		uc.writeErrorResponse(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	uc.writeJSONResponse(w, response, http.StatusOK)
+	uc.writeJSONResponse(w, resp, http.StatusOK)
 }
 
-// FindAll retrieves all users (PROTECTED)
 func (uc *UserControllerImpl) FindAll(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	response := uc.userService.FindAll(r.Context())
-	uc.writeJSONResponse(w, response, http.StatusOK)
+	resp, err := uc.userService.FindAll(r.Context())
+	if err != nil {
+		uc.writeErrorResponse(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	uc.writeJSONResponse(w, resp, http.StatusOK)
 }
 
+func (uc *UserControllerImpl) RefreshToken(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// obtains token from Authorization header
+	auth := r.Header.Get("Authorization")
+	if auth == "" {
+		uc.writeErrorResponse(w, "Authorization header required", http.StatusUnauthorized)
+		return
+	}
+	parts := strings.Fields(auth)
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		uc.writeErrorResponse(w, "Invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+	oldToken := parts[1]
+	resp, err := uc.userService.RefreshToken(r.Context(), oldToken)
+	if err != nil {
+		uc.writeErrorResponse(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	uc.writeJSONResponse(w, resp, http.StatusOK)
+}
+
+// helpers
 func (uc *UserControllerImpl) writeJSONResponse(w http.ResponseWriter, data interface{}, statusCode int) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(statusCode)
-    json.NewEncoder(w).Encode(web.WebResponse{
-        Code:   statusCode,
-        Status: http.StatusText(statusCode),
-        Data:   data,
-    })
-}
-
-func (uc *UserControllerImpl) writeErrorResponse(w http.ResponseWriter, message string, statusCode int) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(statusCode)
-    json.NewEncoder(w).Encode(web.WebResponse{
-        Code:   statusCode,
-        Status: http.StatusText(statusCode),
-        Data:   map[string]string{"error": message},
-    })
-}
-
-
-func (uc *UserControllerImpl) writeSuccessResponse(w http.ResponseWriter, message string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": message,
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(web.WebResponse{
+		Code:   statusCode,
+		Status: http.StatusText(statusCode),
+		Data:   data,
 	})
 }
 
-// RefreshToken generates a new JWT token using the current valid token
-func (uc *UserControllerImpl) RefreshToken(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	// Get user info from context (already authenticated by middleware)
-	userID, ok := middleware.GetUserIDFromContext(r.Context())
-	if !ok {
-		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	email, ok := middleware.GetEmailFromContext(r.Context())
-	if !ok {
-		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	// Generate new token
-	newToken, err := helper.GenerateToken(userID, email, uc.userService.(*service.UserServiceImpl).TokenExpiry)
-    if err != nil {
-        uc.writeErrorResponse(w, "Failed to generate token", http.StatusInternalServerError)
-        return
-    }
-
-	response := map[string]string{
-		"token": newToken,
-		"message": "Token refreshed successfully",
-	}
-
-	uc.writeJSONResponse(w, response, http.StatusOK)
+func (uc *UserControllerImpl) writeErrorResponse(w http.ResponseWriter, message string, statusCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(web.WebResponse{
+		Code:   statusCode,
+		Status: http.StatusText(statusCode),
+		Data:   map[string]string{"error": message},
+	})
 }

@@ -15,144 +15,74 @@ func NewUserRepository() UserRepository {
 }
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, user domain.User) domain.User {
-	SQL := "insert into users(username, email, password_hash, created_at, updated_at) values($1, $2, $3, $4, $5) returning id"
-
-	err := tx.QueryRowContext(ctx, SQL,
-	user.Username,
-	user.Email,
-	user.PasswordHash,
-	user.CreatedAt,
-	user.UpdatedAt).Scan(&user.ID)
-
+	sql := `INSERT INTO users (username, email, password_hash, role, created_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`
+	err := tx.QueryRowContext(ctx, sql, user.Username, user.Email, user.PasswordHash, user.Role, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
 	helper.PanicIfError(err)
 	return user
 }
 
-func (r *UserRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, user domain.User) domain.User {
-    SQL := `UPDATE users 
-            SET username = $1, email = $2, updated_at = $3 
-            WHERE id = $4`
-    
-    _, err := tx.ExecContext(ctx, SQL, 
-        user.Username, 
-        user.Email, 
-        user.UpdatedAt,
-        user.ID,
-    )
-    
-    helper.PanicIfError(err)
-    return user
-}
-
-func (r *UserRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx, userId int) {
-    SQL := "DELETE FROM users WHERE id = $1"
-    _, err := tx.ExecContext(ctx, SQL, userId)
-    helper.PanicIfError(err)
-}
-
-func (r *UserRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, userId int) (domain.User, error) {
-    SQL := `SELECT id, username, email, password_hash, created_at, updated_at 
-            FROM users WHERE id = $1`
-    
-    row := tx.QueryRowContext(ctx, SQL, userId)
-    
-    user := domain.User{}
-    err := row.Scan(
-        &user.ID, 
-        &user.Username, 
-        &user.Email, 
-        &user.PasswordHash,
-        &user.CreatedAt,
-        &user.UpdatedAt,
-    )
-    
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return user, errors.New("user not found")
-        }
-        helper.PanicIfError(err)
-    }
-    
-    return user, nil
+func (r *UserRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id int) (domain.User, error) {
+	sql := `SELECT id, username, email, password_hash, role, created_at, updated_at FROM users WHERE id=$1`
+	row := tx.QueryRowContext(ctx, sql, id)
+	var u domain.User
+	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return u, nil
 }
 
 func (r *UserRepositoryImpl) FindByEmail(ctx context.Context, tx *sql.Tx, email string) (domain.User, error) {
-    SQL := `SELECT id, username, email, password_hash, created_at, updated_at 
-            FROM users WHERE email = $1`
-    
-    row := tx.QueryRowContext(ctx, SQL, email)
-    
-    user := domain.User{}
-    err := row.Scan(
-        &user.ID, 
-        &user.Username, 
-        &user.Email, 
-        &user.PasswordHash,
-        &user.CreatedAt,
-        &user.UpdatedAt,
-    )
-    
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return user, errors.New("user not found")
-        }
-        helper.PanicIfError(err)
-    }
-    
-    return user, nil
+	query := `SELECT id, username, email, password_hash, role, created_at, updated_at FROM users WHERE email=$1`
+	row := tx.QueryRowContext(ctx, query, email)
+	var u domain.User
+	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, sql.ErrNoRows
+		}
+		return domain.User{}, err
+	}
+	return u, nil
 }
 
 func (r *UserRepositoryImpl) FindByUsername(ctx context.Context, tx *sql.Tx, username string) (domain.User, error) {
-    SQL := `SELECT id, username, email, password_hash, created_at, updated_at 
-            FROM users WHERE username = $1`
-    
-    row := tx.QueryRowContext(ctx, SQL, username)
-    
-    user := domain.User{}
-    err := row.Scan(
-        &user.ID, 
-        &user.Username, 
-        &user.Email, 
-        &user.PasswordHash,
-        &user.CreatedAt,
-        &user.UpdatedAt,
-    )
-    
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return user, errors.New("user not found")
-        }
-        helper.PanicIfError(err)
-    }
-    
-    return user, nil
+	query := `SELECT id, username, email, password_hash, role, created_at, updated_at FROM users WHERE username=$1`
+	row := tx.QueryRowContext(ctx, query, username)
+	var u domain.User
+	err := row.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, sql.ErrNoRows
+		}
+		return domain.User{}, err
+	}
+	return u, nil
 }
 
 func (r *UserRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) []domain.User {
-    SQL := `SELECT id, username, email, password_hash, created_at, updated_at 
-            FROM users`
-    
-    rows, err := tx.QueryContext(ctx, SQL)
-    helper.PanicIfError(err)
-    defer rows.Close()
+	sql := `SELECT id, username, email, password_hash, role, created_at, updated_at FROM users`
+	rows, err := tx.QueryContext(ctx, sql)
+	helper.PanicIfError(err)
+	defer rows.Close()
+	var users []domain.User
+	for rows.Next() {
+		var u domain.User
+		helper.PanicIfError(rows.Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt))
+		users = append(users, u)
+	}
+	return users
+}
 
-    var users []domain.User
-    for rows.Next() {
-        user := domain.User{}
-        err := rows.Scan(
-            &user.ID, 
-            &user.Username, 
-            &user.Email, 
-            &user.PasswordHash,
-            &user.CreatedAt,
-            &user.UpdatedAt,
-        )
-        helper.PanicIfError(err)
-        users = append(users, user)
-    }
-    
-    err = rows.Err()
-    helper.PanicIfError(err)
-    
-    return users
+func (r *UserRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, user domain.User) domain.User {
+	sql := `UPDATE users SET username=$1, email=$2, updated_at=$3 WHERE id=$4`
+	_, err := tx.ExecContext(ctx, sql, user.Username, user.Email, user.UpdatedAt, user.ID)
+	helper.PanicIfError(err)
+	return user
+}
+
+func (r *UserRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx, id int) {
+	sql := `DELETE FROM users WHERE id=$1`
+	_, err := tx.ExecContext(ctx, sql, id)
+	helper.PanicIfError(err)
 }

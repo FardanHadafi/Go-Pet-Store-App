@@ -1,5 +1,10 @@
 @baseUrl = http://localhost:3000/api
-@userToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6Im93bmVyQGV4YW1wbGUuY29tIiwiaXNzIjoicGV0c3RvcmUtYXBpIiwiZXhwIjoxNzU5NDg2NjA0LCJuYmYiOjE3NTk0MDAyMDQsImlhdCI6MTc1OTQwMDIwNH0.2lR50nZzNlIOaGdjXhsgBtMJiQHe9XqUT-W_26A-SiA
+@userToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJlbWFpbCI6Im93bmVyQGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJpc3MiOiJwZXRzdG9yZS1hcGkiLCJleHAiOjE3NTk0OTUwMjcsIm5iZiI6MTc1OTQwODYyNywiaWF0IjoxNzU5NDA4NjI3fQ.ISwDcscagCaOT_VHN2YYW1HzWACQkag6j0_d5QsKNqA
+@adminToken =
+
+### 0. Check API docs (Swagger)
+GET http://localhost:3000/docs
+Accept: text/html
 
 ### 1. Register a new user
 POST {{baseUrl}}/users/register
@@ -13,41 +18,41 @@ Accept: application/json
 }
 
 ### 2. Login with the same user
-# After this request, copy the token into @userToken above
 POST {{baseUrl}}/users/login
 Content-Type: application/json
 Accept: application/json
-Authorization: {{userToken}}
 
 {
   "username": "pet_owner",
   "password": "secure123"
 }
 
-### 3. Refresh token (requires valid token)
+> {% client.global.set("userToken", response.body.token); %}
+
+### 3. Refresh token
 POST {{baseUrl}}/auth/refresh
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
-### 4. Get all users (protected)
+### 4. Get all users (protected, normal user → should fail)
 GET {{baseUrl}}/users
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
-### 5. Get user by ID (protected)
+### 5. Get my user profile (protected)
 GET {{baseUrl}}/users/1
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
-### 6. Update user (protected)
+### 6. Update my user profile (protected)
 PUT {{baseUrl}}/users/1
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "username": "updated_owner",
-  "email": "owner_updated@example.com"
+  "username": "updated_owner1",
+  "email": "owner1_updated@example.com"
 }
 
 ### 7. Change password (protected)
@@ -61,7 +66,7 @@ Accept: application/json
   "new_password": "newpass456"
 }
 
-### 8. Create a pet (protected)
+### 8. Create a pet (protected, owned by user)
 POST {{baseUrl}}/pets
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
@@ -73,8 +78,8 @@ Accept: application/json
   "price": 500.00
 }
 
-### 9. Get all pets (only for logged-in user)
-GET {{baseUrl}}/pets
+### 9. Get my pets (protected, with pagination & filtering)
+GET {{baseUrl}}/pets?page=1&limit=5&species=dog
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
@@ -103,4 +108,32 @@ Accept: application/json
 ### 13. Delete user account (protected)
 DELETE {{baseUrl}}/users/1
 Authorization: Bearer {{userToken}}
+Accept: application/json
+
+### 14. Login as admin
+# Make sure an admin exists in DB (role='admin')
+POST {{baseUrl}}/users/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "admin",
+  "password": "adminpass"
+}
+
+> {% client.global.set("adminToken", response.body.token); %}
+
+### 15. Admin → Get all users
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### 16. Admin → Get all pets
+GET {{baseUrl}}/admin/pets
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### 17. Admin → Get pets by user
+GET {{baseUrl}}/pets?owner_id=1
+Authorization: Bearer {{adminToken}}
 Accept: application/json
