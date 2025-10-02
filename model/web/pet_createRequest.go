@@ -1,7 +1,7 @@
 package web
 
 type PetCreateRequest struct {
-	Name string `validate:"required,min=3,max=100" json:"name"`
-	Species string `validate:"required" json:"species"`
-	Price float64 `validate:"required" json:"price"`
+    Name    string  `json:"name" validate:"required"`
+    Species string  `json:"species" validate:"required"`
+    Price   float64 `json:"price" validate:"gte=0"`
 }

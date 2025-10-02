@@ -7,7 +7,7 @@ import (
 
 func ToPetResponse(pet domain.Pet) web.PetResponse {
 	return web.PetResponse{
-		Id: pet.ID,
+		ID: pet.ID,
 		Name: pet.Name,
 		Species: pet.Species,
 		Price: pet.Price,

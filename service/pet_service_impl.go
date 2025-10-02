@@ -26,24 +26,27 @@ func NewPetService(petRepository repository.PetRepository, DB *sql.DB, validate 
 	}
 }
 
-func (s *PetServiceImpl) Create(ctx context.Context, r web.PetCreateRequest) web.PetResponse {
-	// Validate the struct
-	err := s.Validate.Struct(r)
-	helper.PanicIfError(err)
+func (s *PetServiceImpl) Create(ctx context.Context, request web.PetCreateRequest, userID int) web.PetResponse {
+    pet := domain.Pet{
+        Name:      request.Name,
+        Species:   request.Species,
+        Price:     request.Price,
+        CreatedBy: userID, // ✅ owner from JWT
+    }
 
-	tx, err := s.DB.Begin()
-	helper.PanicIfError(err)
-	defer helper.CommitOrRollback(tx)
+    tx, err := s.DB.Begin()
+    helper.PanicIfError(err)
+    defer helper.CommitOrRollback(tx)
 
-	pet := domain.Pet{
-		Name: r.Name,
-		Species: r.Species,
-		Price: r.Price,
-	}
+    pet = s.PetRepository.Create(ctx, tx, pet)
 
-	pet = s.PetRepository.Create(ctx, tx, pet)
-
-	return helper.ToPetResponse(pet)
+    return web.PetResponse{
+        ID:      pet.ID,
+        Name:    pet.Name,
+        Species: pet.Species,
+        Price:   pet.Price,
+        OwnerID: pet.CreatedBy,
+    }
 }
 
 func (s *PetServiceImpl) Update(ctx context.Context, r web.PetUpdateRequest) web.PetResponse {
@@ -97,16 +100,22 @@ func (s *PetServiceImpl) FindById(ctx context.Context, petId int) web.PetRespons
 	return helper.ToPetResponse(pet)
 }
 
-func (s *PetServiceImpl) FindAll(ctx context.Context) []web.PetResponse {
-		tx, err := s.DB.Begin()
+func (s *PetServiceImpl) FindAll(ctx context.Context, userID int) []web.PetResponse {
+	tx, err := s.DB.Begin()
 	helper.PanicIfError(err)
 	defer helper.CommitOrRollback(tx)
 
-	pets := s.PetRepository.FindAll(ctx, tx)
+	pets := s.PetRepository.FindAll(ctx, tx, userID)
 
-	var petResponses []web.PetResponse
-	for _, pet := range pets {
-		petResponses = append(petResponses, helper.ToPetResponse(pet))
-	}
-	return petResponses
+	var responses []web.PetResponse
+    for _, p := range pets {
+        responses = append(responses, web.PetResponse{
+            ID:      p.ID,
+            Name:    p.Name,
+            Species: p.Species,
+            Price:   p.Price,
+            OwnerID: p.CreatedBy,
+        })
+    }
+	return responses
 }

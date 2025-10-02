@@ -35,13 +35,14 @@ func main() {
 	userController := controller.NewUserController(userService)
 
 	router := httprouter.New()
+	
+	// Pet endpoints
+router.GET("/api/pets", jwtMiddleware.Authenticate(petController.FindAll))
+router.POST("/api/pets", jwtMiddleware.Authenticate(petController.Create))
+router.GET("/api/pets/:petId", jwtMiddleware.Authenticate(petController.FindById))
+router.PUT("/api/pets/:petId", jwtMiddleware.Authenticate(petController.Update))
+router.DELETE("/api/pets/:petId", jwtMiddleware.Authenticate(petController.Delete))
 
-	// Pet endpoints (GET public, modifications protected)
-	router.GET("/api/pets", petController.FindAll)
-	router.POST("/api/pets", jwtMiddleware.Authenticate(petController.Create))
-	router.GET("/api/pets/:petId", petController.FindById)
-	router.PUT("/api/pets/:petId", jwtMiddleware.Authenticate(petController.Update))
-	router.DELETE("/api/pets/:petId", jwtMiddleware.Authenticate(petController.Delete))
 
 	// User endpoints
 	router.POST("/api/users/register", userController.Register)

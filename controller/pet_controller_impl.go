@@ -2,6 +2,7 @@ package controller
 
 import (
 	"Go-PetStoreApp/helper"
+	"Go-PetStoreApp/middleware"
 	"Go-PetStoreApp/model/web"
 	"Go-PetStoreApp/service"
 	"net/http"
@@ -20,19 +21,21 @@ func NewPetController(petService service.PetService) PetController {
 	}
 }
 
-func (p *PetControllerImpl) Create(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	petCreateRequest := web.PetCreateRequest{}
-	helper.ReadFromRequest(r, &petCreateRequest)
+func (c *PetControllerImpl) Create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+    var request web.PetCreateRequest
+    helper.ReadFromRequest(r, &request)
 
-	petResponse := p.PetService.Create(r.Context(), petCreateRequest)
-	webRespose := web.WebResponse{
-		Code: http.StatusCreated,
-		Status: "Created",
-		Data: petResponse,
-	}
+    userID, ok := middleware.GetUserIDFromContext(r.Context())
+    if !ok {
+        webResponse := web.WebResponse{Code: 401, Status: "Unauthorized"}
+        helper.WriteToResponseBody(w, webResponse)
+        return
+    }
 
-	w.WriteHeader(http.StatusCreated)
-	helper.WriteToResponseBody(w, webRespose)
+    petResponse := c.PetService.Create(r.Context(), request, userID)
+
+    webResponse := web.WebResponse{Code: 201, Status: "Created", Data: petResponse}
+    helper.WriteToResponseBody(w, webResponse)
 }
 
 func (p *PetControllerImpl) Update(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -85,14 +88,16 @@ func (p *PetControllerImpl) FindById(w http.ResponseWriter, r *http.Request, par
 	helper.WriteToResponseBody(w, webRespose)
 }
 
-func (p *PetControllerImpl) FindAll(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	petResponses := p.PetService.FindAll(r.Context())
-	webRespose := web.WebResponse{
-		Code: http.StatusOK,
-		Status: "OK",
-		Data: petResponses,
-	}
+func (c *PetControllerImpl) FindAll(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+    userID, ok := middleware.GetUserIDFromContext(r.Context())
+    if !ok {
+        webResponse := web.WebResponse{Code: 401, Status: "Unauthorized"}
+        helper.WriteToResponseBody(w, webResponse)
+        return
+    }
 
-	w.WriteHeader(http.StatusOK)
-	helper.WriteToResponseBody(w, webRespose)
+    pets := c.PetService.FindAll(r.Context(), userID)
+
+    webResponse := web.WebResponse{Code: 200, Status: "OK", Data: pets}
+    helper.WriteToResponseBody(w, webResponse)
 }

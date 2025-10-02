@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 type PetRepositoryImpl struct{}
@@ -16,14 +15,10 @@ func NewPetRepository() PetRepository {
 }
 
 func (r *PetRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, pet domain.Pet) domain.Pet {
-	SQL := "INSERT INTO pets(name, species, price) VALUES($1, $2, $3) RETURNING id"
-	
-	err := tx.QueryRowContext(ctx, SQL, pet.Name, pet.Species, pet.Price).Scan(&pet.ID)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to create pet: %v", err))
-	}
-
-	return pet
+    SQL := "INSERT INTO pets (name, species, price, created_by) VALUES ($1, $2, $3, $4) RETURNING id"
+    err := tx.QueryRowContext(ctx, SQL, pet.Name, pet.Species, pet.Price, pet.CreatedBy).Scan(&pet.ID)
+    helper.PanicIfError(err)
+    return pet
 }
 
 func (r *PetRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, pet domain.Pet) domain.Pet {
@@ -55,21 +50,18 @@ func (r *PetRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, petId int)
 	return pet, nil
 }
 
-func (r *PetRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) []domain.Pet {
-	SQL := "select id, name, species, price from pets"
-	rows, err := tx.QueryContext(ctx, SQL)
-	helper.PanicIfError(err)
-	defer rows.Close()
+func (r *PetRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx, userID int) []domain.Pet {
+    SQL := "SELECT id, name, species, price, created_by FROM pets WHERE created_by = $1"
+    rows, err := tx.QueryContext(ctx, SQL, userID)
+    helper.PanicIfError(err)
+    defer rows.Close()
 
-	var pets []domain.Pet
-	for rows.Next() {
-		pet := domain.Pet{}
-		err := rows.Scan(&pet.ID, &pet.Name, &pet.Species, &pet.Price)
-		helper.PanicIfError(err)
-		pets = append(pets, pet)
-	}
-
-	err = rows.Err()
-	helper.PanicIfError(err)
-	return pets
-} 
+    var pets []domain.Pet
+    for rows.Next() {
+        var pet domain.Pet
+        err := rows.Scan(&pet.ID, &pet.Name, &pet.Species, &pet.Price, &pet.CreatedBy)
+        helper.PanicIfError(err)
+        pets = append(pets, pet)
+    }
+    return pets
+}

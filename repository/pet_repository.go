@@ -16,5 +16,5 @@ type PetRepository interface {
 	// GetPetById - Get a pet by ID
 	FindById(ctx context.Context, tx *sql.Tx, petId int) (domain.Pet, error)
 	// GetAllPets - Get all pets
-	FindAll(ctx context.Context, tx *sql.Tx) []domain.Pet
+	FindAll(ctx context.Context, tx *sql.Tx, userID int) []domain.Pet
 }

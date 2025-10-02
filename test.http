@@ -1,56 +1,57 @@
-### 1. Register a new user
-@userToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyNSwiZW1haWwiOiJvd25lcjdAZXhhbXBsZS5jb20iLCJpc3MiOiJwZXRzdG9yZS1hcGkiLCJleHAiOjE3NTk0ODI3NTAsIm5iZiI6MTc1OTM5NjM1MCwiaWF0IjoxNzU5Mzk2MzUwfQ.UFTeJ_il1qidUvWPeANV39GvuNgMmJGXa9PZXnbc0ig
+@baseUrl = http://localhost:3000/api
+@userToken =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6Im93bmVyQGV4YW1wbGUuY29tIiwiaXNzIjoicGV0c3RvcmUtYXBpIiwiZXhwIjoxNzU5NDg2NjA0LCJuYmYiOjE3NTk0MDAyMDQsImlhdCI6MTc1OTQwMDIwNH0.2lR50nZzNlIOaGdjXhsgBtMJiQHe9XqUT-W_26A-SiA
 
-POST http://localhost:3000/api/users/register
+### 1. Register a new user
+POST {{baseUrl}}/users/register
 Content-Type: application/json
 Accept: application/json
 
 {
-  "username": "pet_owner7",
+  "username": "pet_owner",
   "password": "secure123",
-  "email": "owner7@example.com"
+  "email": "owner@example.com"
 }
 
 ### 2. Login with the same user
-# Copy the token from response into {{userToken}} below
-POST http://localhost:3000/api/users/login
+# After this request, copy the token into @userToken above
+POST {{baseUrl}}/users/login
 Content-Type: application/json
 Accept: application/json
 Authorization: {{userToken}}
 
 {
-  "username": "pet_owner7",
+  "username": "pet_owner",
   "password": "secure123"
 }
 
-### 3. Refresh token
-POST http://localhost:3000/api/auth/refresh
+### 3. Refresh token (requires valid token)
+POST {{baseUrl}}/auth/refresh
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ### 4. Get all users (protected)
-GET http://localhost:3000/api/users
+GET {{baseUrl}}/users
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ### 5. Get user by ID (protected)
-GET http://localhost:3000/api/users/16
+GET {{baseUrl}}/users/1
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ### 6. Update user (protected)
-PUT http://localhost:3000/api/users/25
+PUT {{baseUrl}}/users/1
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
   "username": "updated_owner",
-  "email": "owner1_updated@example.com"
+  "email": "owner_updated@example.com"
 }
 
 ### 7. Change password (protected)
-PATCH http://localhost:3000/api/users/25/password
+PATCH {{baseUrl}}/users/1/password
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
 Accept: application/json
@@ -61,7 +62,7 @@ Accept: application/json
 }
 
 ### 8. Create a pet (protected)
-POST http://localhost:3000/api/pets
+POST {{baseUrl}}/pets
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
 Accept: application/json
@@ -72,18 +73,18 @@ Accept: application/json
   "price": 500.00
 }
 
-### 9. Get all pets (protected)
-GET http://localhost:3000/api/pets
+### 9. Get all pets (only for logged-in user)
+GET {{baseUrl}}/pets
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ### 10. Get pet by ID (protected)
-GET http://localhost:3000/api/pets/10
-Authorization: Bearer 
+GET {{baseUrl}}/pets/1
+Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ### 11. Update pet (protected)
-PUT http://localhost:3000/api/pets/10
+PUT {{baseUrl}}/pets/1
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
 Accept: application/json
@@ -95,11 +96,11 @@ Accept: application/json
 }
 
 ### 12. Delete pet (protected)
-DELETE http://localhost:3000/api/pets/10
+DELETE {{baseUrl}}/pets/1
 Authorization: Bearer {{userToken}}
 Accept: application/json
 
 ### 13. Delete user account (protected)
-DELETE http://localhost:3000/api/users/25
+DELETE {{baseUrl}}/users/1
 Authorization: Bearer {{userToken}}
 Accept: application/json
