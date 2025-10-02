@@ -26,12 +26,12 @@ func (p *PetControllerImpl) Create(w http.ResponseWriter, r *http.Request, param
 
 	petResponse := p.PetService.Create(r.Context(), petCreateRequest)
 	webRespose := web.WebResponse{
-		Code: 200,
-		Status: "OK",
+		Code: http.StatusCreated,
+		Status: "Created",
 		Data: petResponse,
 	}
 
-
+	w.WriteHeader(http.StatusCreated)
 	helper.WriteToResponseBody(w, webRespose)
 }
 
@@ -47,7 +47,7 @@ func (p *PetControllerImpl) Update(w http.ResponseWriter, r *http.Request, param
 
 	petResponse := p.PetService.Update(r.Context(), petUpdateRequest)
 	webRespose := web.WebResponse{
-		Code: 200,
+		Code: http.StatusOK,
 		Status: "OK",
 		Data: petResponse,
 	}
@@ -62,8 +62,8 @@ func (p *PetControllerImpl) Delete(w http.ResponseWriter, r *http.Request, param
 
 	p.PetService.Delete(r.Context(), id)
 	webRespose := web.WebResponse{
-		Code: 200,
-		Status: "OK",
+		Code: 204,
+		Status: strconv.Itoa(http.StatusNoContent),
 	}
 
 	helper.WriteToResponseBody(w, webRespose)
@@ -76,21 +76,23 @@ func (p *PetControllerImpl) FindById(w http.ResponseWriter, r *http.Request, par
 
 	petResponse := p.PetService.FindById(r.Context(), id)
 	webRespose := web.WebResponse{
-		Code: 200,
+		Code: http.StatusOK,
 		Status: "OK",
 		Data: petResponse,
 	}
 
+	w.WriteHeader(http.StatusOK)
 	helper.WriteToResponseBody(w, webRespose)
 }
 
 func (p *PetControllerImpl) FindAll(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	petResponses := p.PetService.FindAll(r.Context())
 	webRespose := web.WebResponse{
-		Code: 200,
+		Code: http.StatusOK,
 		Status: "OK",
 		Data: petResponses,
 	}
 
+	w.WriteHeader(http.StatusOK)
 	helper.WriteToResponseBody(w, webRespose)
 }

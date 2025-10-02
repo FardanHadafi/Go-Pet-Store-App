@@ -15,4 +15,5 @@ type UserController interface {
 	Delete(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	FindById(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	FindAll(w http.ResponseWriter, r *http.Request, params httprouter.Params)
+	RefreshToken(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 }

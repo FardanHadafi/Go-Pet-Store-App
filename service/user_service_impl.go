@@ -18,9 +18,10 @@ type UserServiceImpl struct {
 	UserRepository repository.UserRepository
 	DB             *sql.DB
 	Validate       *validator.Validate
+    TokenExpiry    int
 }
 
-func NewUserService(userRepository repository.UserRepository, DB *sql.DB, validate *validator.Validate) UserService {
+func NewUserService(userRepository repository.UserRepository, DB *sql.DB, validate *validator.Validate, tokenExpiry int) UserService {
 	return &UserServiceImpl{
 		UserRepository: userRepository,
 		DB:             DB,
@@ -141,7 +142,7 @@ func (s *UserServiceImpl) Login(ctx context.Context, request web.UserLoginReques
     }
 
     // Generate JWT token
-    token, err := helper.GenerateToken(user.ID, user.Email)
+    token, err := helper.GenerateToken(user.ID, user.Email, s.TokenExpiry)
     if err != nil {
         return web.AuthResponse{}, err
     }
@@ -195,7 +196,7 @@ func (s *UserServiceImpl) Register(ctx context.Context, request web.UserRegister
     user = s.UserRepository.Create(ctx, tx, user)
 
     // Generate JWT token
-    token, err := helper.GenerateToken(user.ID, user.Email)
+    token, err := helper.GenerateToken(user.ID, user.Email, s.TokenExpiry)
     if err != nil {
         return web.AuthResponse{}, err
     }

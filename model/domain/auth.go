@@ -5,9 +5,3 @@ type AuthRequest struct {
     Password string `json:"password"`
     Email    string `json:"email,omitempty"`
 }
-
-type AuthResponse struct {
-    Token   string `json:"token"`
-    Username string `json:"username"`
-    Message string `json:"message"`
-}
