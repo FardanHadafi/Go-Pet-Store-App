@@ -63,39 +63,6 @@ BEFORE UPDATE ON pets
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
--- ===============================
--- SAMPLE DATA
--- ===============================
-
--- Create a test admin and user
-INSERT INTO
-    users (
-        username,
-        email,
-        password_hash,
-        role
-    )
-VALUES (
-        'admin',
-        'admin@example.com',
-        'hashedpassword',
-        'admin'
-    ),
-ON CONFLICT DO NOTHING;
-
--- Create pets owned by user 2 (testuser)
-INSERT INTO
-    pets (
-        name,
-        species,
-        price,
-        created_by
-    )
-VALUES ('Fluffy', 'cat', 299.99, 2),
-    ('Buddy', 'dog', 450.00, 2),
-    ('Tweety', 'bird', 89.99, 2)
-ON CONFLICT DO NOTHING;
-
 select * from users;
 
 select * from pets;

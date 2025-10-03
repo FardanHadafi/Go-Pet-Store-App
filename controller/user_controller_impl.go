@@ -156,7 +156,7 @@ func (uc *UserControllerImpl) Delete(w http.ResponseWriter, r *http.Request, par
         return
     }
 
-    // Only allow self-delete (unless admin logic is added later)
+    // Only allow self-delete
     if authenticatedUserID != targetUserID {
         uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
         return

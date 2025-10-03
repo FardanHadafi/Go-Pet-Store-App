@@ -15,7 +15,7 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateToken now receives role
+// GenerateToken receives role
 func GenerateToken(userID int, email, role string, expiryHours int) (string, error) {
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {

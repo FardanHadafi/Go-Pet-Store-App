@@ -35,34 +35,6 @@ func main() {
 	jwtMiddleware := middleware.NewJWTMiddleware()
 	router := httprouter.New()
 
-	// --- Swagger/OpenAPI docs ---
-	router.GET("/apispec.yaml", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		http.ServeFile(w, r, "./docs/swagger.yaml")
-	})
-
-	router.GET("/docs", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(200)
-		_, _ = w.Write([]byte(`<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8"/>
-    <title>PetStore API Docs</title>
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@4/swagger-ui.css">
-  </head>
-  <body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@4/swagger-ui-bundle.js"></script>
-    <script>
-      window.ui = SwaggerUIBundle({
-        url: '/apispec.yaml',
-        dom_id: '#swagger-ui',
-      });
-    </script>
-  </body>
-</html>`))
-	})
-
 	// --- User endpoints ---
 	router.POST("/api/users/register", userController.Register)
 	router.POST("/api/users/login", userController.Login)
