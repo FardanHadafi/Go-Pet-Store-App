@@ -2,11 +2,7 @@ openapi: 3.0.0
 info:
   title: Simple Pet Store API
   version: 1.1.0
-  description: >
-    A simple API to manage pets in a pet store with JWT authentication.
-    Includes role-based access control (RBAC): 
-    - `user` can only manage their own pets
-    - `admin` can view/manage all users and pets.
+  description: A simple API to manage users and pets with JWT authentication and role-based access (admin/user).
   contact:
     name: API support
     email: fardanhadafi@example.com
@@ -15,9 +11,9 @@ servers:
     description: Development server
 
 paths:
-  /auth/register:
+  /users/register:
     post:
-      summary: Register a new user
+      summary: Register a new user (admin or normal)
       tags: [Authentication]
       requestBody:
         required: true
@@ -31,13 +27,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "400":
-          description: Invalid input
-        "409":
-          description: User already exists
+                $ref: "#/components/schemas/UserResponse"
+        "400": { description: Invalid input }
+        "409": { description: User already exists }
 
-  /auth/login:
+  /users/login:
     post:
       summary: Login user
       tags: [Authentication]
@@ -54,61 +48,140 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
-        "401":
-          description: Invalid credentials
+        "401": { description: Invalid credentials }
 
   /auth/refresh:
     post:
       summary: Refresh JWT token
       tags: [Authentication]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       responses:
         "200":
-          description: Token refreshed
+          description: Token refreshed successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
-        "401":
-          description: Invalid or expired token
+        "401": { description: Unauthorized }
+
+  /users/{id}:
+    get:
+      summary: Get user by ID (self or admin)
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+    put:
+      summary: Update user (self or admin)
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        "200":
+          description: Updated successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserResponse" }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+    delete:
+      summary: Delete user (self or admin)
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: User deleted }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+
+  /users/{id}/password:
+    patch:
+      summary: Change user password
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    { type: string, example: "Password updated successfully" }
+        "400": { description: Invalid input }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
 
   /pets:
     get:
-      summary: Get all pets
-      description: >
-        Returns a list of pets. 
-        - Normal users only see their own pets. 
-        - Admins can pass `owner_id` query to filter by user or see all.
+      summary: Get pets (self only, paginated)
       tags: [Pets]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       parameters:
-        - name: page
-          in: query
-          schema: { type: integer }
-        - name: limit
-          in: query
-          schema: { type: integer }
-        - name: species
-          in: query
-          schema: { type: string }
-        - name: owner_id
-          in: query
-          schema: { type: integer }
-          description: Admin-only. Filter pets by owner ID.
+        - in: query
+          name: page
+          schema: { type: integer, example: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, example: 10 }
       responses:
         "200":
-          description: Successful response
+          description: List of pets
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Pet" }
-        "401": { description: Unauthorized }
-
     post:
-      summary: Add a new pet
+      summary: Add a new pet (self only)
       tags: [Pets]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -120,16 +193,16 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Pet" }
-        "400": { description: Invalid input }
 
   /pets/{petId}:
     get:
-      summary: Get a pet by ID
+      summary: Get a pet by ID (self only)
       tags: [Pets]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       parameters:
-        - name: petId
-          in: path
+        - in: path
+          name: petId
           required: true
           schema: { type: integer }
       responses:
@@ -138,15 +211,16 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Pet" }
-        "404": { description: Pet not found }
+        "404": { description: Not found }
 
     put:
-      summary: Update a pet
+      summary: Update a pet (self only)
       tags: [Pets]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       parameters:
-        - name: petId
-          in: path
+        - in: path
+          name: petId
           required: true
           schema: { type: integer }
       requestBody:
@@ -156,80 +230,77 @@ paths:
             schema: { $ref: "#/components/schemas/NewPet" }
       responses:
         "200":
-          description: Pet updated
+          description: Updated successfully
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Pet" }
 
     delete:
-      summary: Delete a pet
+      summary: Delete a pet (self only)
       tags: [Pets]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       parameters:
-        - name: petId
-          in: path
+        - in: path
+          name: petId
           required: true
           schema: { type: integer }
       responses:
-        "204": { description: Pet deleted }
+        "200": { description: Deleted successfully }
 
   /admin/users:
     get:
-      summary: List all users (admin only)
+      summary: Get all users (admin only)
       tags: [Admin]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       responses:
         "200":
-          description: All users listed
+          description: List of all users
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/UserResponse" }
-        "403": { description: Forbidden (not admin) }
+        "403": { description: Forbidden }
 
   /admin/pets:
     get:
-      summary: List all pets (admin only)
+      summary: Get all pets (admin only)
       tags: [Admin]
-      security: [{ BearerAuth: [] }]
+      security:
+        - BearerAuth: []
       responses:
         "200":
-          description: All pets listed
+          description: List of all pets
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Pet" }
-        "403": { description: Forbidden (not admin) }
+        "403": { description: Forbidden }
 
 components:
   schemas:
-    Pet:
-      type: object
-      properties:
-        id: { type: integer, example: 1 }
-        name: { type: string, example: "Fluffy" }
-        species: { type: string, example: "cat" }
-        price: { type: number, format: float, example: 299.99 }
-        ownerId: { type: integer, example: 1 }
-
-    NewPet:
-      type: object
-      required: [name, species, price]
-      properties:
-        name: { type: string, example: "Fluffy" }
-        species: { type: string, example: "dog" }
-        price: { type: number, format: float, example: 500.00 }
-
     RegisterRequest:
       type: object
-      required: [username, email, password]
+      required: [username, password, email]
       properties:
         username: { type: string, example: "john_doe" }
-        email: { type: string, format: email, example: "john@example.com" }
         password:
           { type: string, format: password, example: "securepassword123" }
+        email: { type: string, format: email, example: "john@example.com" }
+        role:
+          type: string
+          enum: [user, admin]
+          default: user
+          example: user
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        username: { type: string, example: "new_name" }
+        email: { type: string, example: "new@example.com" }
 
     LoginRequest:
       type: object
@@ -239,12 +310,20 @@ components:
         password:
           { type: string, format: password, example: "securepassword123" }
 
+    ChangePasswordRequest:
+      type: object
+      required: [old_password, new_password]
+      properties:
+        old_password: { type: string, format: password, example: "secure123" }
+        new_password: { type: string, format: password, example: "newpass456" }
+
     AuthResponse:
       type: object
       properties:
-        token: { type: string, example: "eyJhbGciOi..." }
-        user:
-          $ref: "#/components/schemas/UserResponse"
+        token: { type: string }
+        username: { type: string }
+        role: { type: string }
+        message: { type: string }
 
     UserResponse:
       type: object
@@ -252,9 +331,28 @@ components:
         id: { type: integer }
         username: { type: string }
         email: { type: string }
-        role: { type: string, example: "user" }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
+        role: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Pet:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        species: { type: string }
+        price: { type: number, format: float }
+        created_by: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    NewPet:
+      type: object
+      required: [name, species, price]
+      properties:
+        name: { type: string, example: "Fluffy" }
+        species: { type: string, example: "cat" }
+        price: { type: number, format: float, example: 299.99 }
 
   securitySchemes:
     BearerAuth:

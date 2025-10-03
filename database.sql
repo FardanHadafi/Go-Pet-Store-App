@@ -81,12 +81,6 @@ VALUES (
         'hashedpassword',
         'admin'
     ),
-    (
-        'testuser',
-        'test@example.com',
-        'hashedpassword',
-        'user'
-    )
 ON CONFLICT DO NOTHING;
 
 -- Create pets owned by user 2 (testuser)
@@ -103,3 +97,9 @@ VALUES ('Fluffy', 'cat', 299.99, 2),
 ON CONFLICT DO NOTHING;
 
 select * from users;
+
+select * from pets;
+
+drop table pets;
+
+drop table users;

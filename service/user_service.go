@@ -11,7 +11,7 @@ type UserService interface {
 	RefreshToken(ctx context.Context, oldToken string) (web.AuthResponse, error)
 	FindById(ctx context.Context, id int) (web.UserResponse, error)
 	FindAll(ctx context.Context) ([]web.UserResponse, error)
-	Update(ctx context.Context, req web.UserUpdateRequest) (web.UserResponse, error)
+	Update(ctx context.Context, id int, req web.UserUpdateRequest) (web.UserResponse, error)
 	ChangePassword(ctx context.Context, req web.UserChangePasswordRequest) error
 	Delete(ctx context.Context, id int) error
 }

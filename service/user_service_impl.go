@@ -8,6 +8,7 @@ import (
 	"Go-PetStoreApp/repository"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -32,17 +33,25 @@ func NewUserService(userRepository repository.UserRepository, DB *sql.DB, valida
 }
 
 func (s *UserServiceImpl) Register(ctx context.Context, request web.UserRegisterRequest) (web.AuthResponse, error) {
+	// validate request
 	if err := s.Validate.Struct(request); err != nil {
 		return web.AuthResponse{}, fmt.Errorf("%w: %v", errorsx.ErrValidation, err)
 	}
 
+	// start transaction
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return web.AuthResponse{}, err
 	}
 	defer helper.CommitOrRollback(tx)
 
-	// check email/username
+	// set role (default: user)
+	role := "user"
+	if request.Role != "" {
+		role = request.Role
+	}
+
+	// check email/username uniqueness
 	if u, _ := s.UserRepository.FindByEmail(ctx, tx, request.Email); u.ID != 0 {
 		return web.AuthResponse{}, fmt.Errorf("%w: email already registered", errorsx.ErrConflict)
 	}
@@ -50,28 +59,41 @@ func (s *UserServiceImpl) Register(ctx context.Context, request web.UserRegister
 		return web.AuthResponse{}, fmt.Errorf("%w: username already taken", errorsx.ErrConflict)
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+	// hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return web.AuthResponse{}, err
 	}
 
+	// build user object
 	now := time.Now()
 	user := domain.User{
 		Username:     request.Username,
 		Email:        request.Email,
-		PasswordHash: string(hashed),
-		Role: "user",
+		PasswordHash: string(hashedPassword),
+		Role:         role,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
 
-	user = s.UserRepository.Create(ctx, tx, user)
-	token, err := helper.GenerateToken(user.ID, user.Email, user.Role, s.TokenExpiry)
+	// save to DB
+	createdUser, err := s.UserRepository.Create(ctx, tx, user)
 	if err != nil {
 		return web.AuthResponse{}, err
 	}
-	return web.AuthResponse{Token: token, User: helper.ToUserResponse(user)}, nil
+
+	// generate JWT token
+	token, err := helper.GenerateToken(createdUser.ID, createdUser.Email, createdUser.Role, s.TokenExpiry)
+	if err != nil {
+		return web.AuthResponse{}, err
+	}
+
+	return web.AuthResponse{
+		Token: token,
+		User:  helper.ToUserResponse(createdUser),
+	}, nil
 }
+
 
 func (s *UserServiceImpl) Login(ctx context.Context, request web.UserLoginRequest) (web.AuthResponse, error) {
 	if err := s.Validate.Struct(request); err != nil {
@@ -122,18 +144,24 @@ func (s *UserServiceImpl) RefreshToken(ctx context.Context, oldToken string) (we
 	return web.AuthResponse{Token: newToken, User: helper.ToUserResponse(u)}, nil
 }
 
-func (s *UserServiceImpl) FindById(ctx context.Context, userId int) (web.UserResponse, error) {
+func (s *UserServiceImpl) FindById(ctx context.Context, id int) (web.UserResponse, error) {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return web.UserResponse{}, err
 	}
 	defer helper.CommitOrRollback(tx)
-	u, err := s.UserRepository.FindById(ctx, tx, userId)
+
+	user, err := s.UserRepository.FindById(ctx, tx, id)
 	if err != nil {
-		return web.UserResponse{}, fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
+		if errors.Is(err, sql.ErrNoRows) {
+			return web.UserResponse{}, fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
+		}
+		return web.UserResponse{}, err
 	}
-	return helper.ToUserResponse(u), nil
+
+	return helper.ToUserResponse(user), nil
 }
+
 
 func (s *UserServiceImpl) FindAll(ctx context.Context) ([]web.UserResponse, error) {
 	tx, err := s.DB.Begin()
@@ -141,7 +169,12 @@ func (s *UserServiceImpl) FindAll(ctx context.Context) ([]web.UserResponse, erro
 		return nil, err
 	}
 	defer helper.CommitOrRollback(tx)
-	users := s.UserRepository.FindAll(ctx, tx)
+
+	users, err := s.UserRepository.FindAll(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+
 	res := make([]web.UserResponse, 0, len(users))
 	for _, u := range users {
 		res = append(res, helper.ToUserResponse(u))
@@ -149,75 +182,93 @@ func (s *UserServiceImpl) FindAll(ctx context.Context) ([]web.UserResponse, erro
 	return res, nil
 }
 
-func (s *UserServiceImpl) Update(ctx context.Context, req web.UserUpdateRequest) (web.UserResponse, error) {
-	if err := s.Validate.Struct(req); err != nil {
+
+func (s *UserServiceImpl) Update(ctx context.Context, id int, request web.UserUpdateRequest) (web.UserResponse, error) {
+	if err := s.Validate.Struct(request); err != nil {
 		return web.UserResponse{}, fmt.Errorf("%w: %v", errorsx.ErrValidation, err)
 	}
+
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return web.UserResponse{}, err
 	}
 	defer helper.CommitOrRollback(tx)
 
-	user, err := s.UserRepository.FindById(ctx, tx, req.Id)
+	// Find user first
+	user, err := s.UserRepository.FindById(ctx, tx, id)
 	if err != nil {
-		return web.UserResponse{}, fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
-	}
-	// email/username uniqueness
-	if user.Email != req.Email {
-		if e, _ := s.UserRepository.FindByEmail(ctx, tx, req.Email); e.ID != 0 && e.ID != req.Id {
-			return web.UserResponse{}, fmt.Errorf("%w: email already taken", errorsx.ErrConflict)
+		if errors.Is(err, sql.ErrNoRows) {
+			return web.UserResponse{}, fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
 		}
+		return web.UserResponse{}, err
 	}
-	if user.Username != req.Username {
-		if e, _ := s.UserRepository.FindByUsername(ctx, tx, req.Username); e.ID != 0 && e.ID != req.Id {
-			return web.UserResponse{}, fmt.Errorf("%w: username already taken", errorsx.ErrConflict)
-		}
-	}
-	user.Username = req.Username
-	user.Email = req.Email
+
+	// Update fields
+	user.Username = request.Username
+	user.Email = request.Email
 	user.UpdatedAt = time.Now()
-	updated := s.UserRepository.Update(ctx, tx, user)
-	return helper.ToUserResponse(updated), nil
+
+	updatedUser, err := s.UserRepository.Update(ctx, tx, user)
+	if err != nil {
+		return web.UserResponse{}, err
+	}
+
+	return helper.ToUserResponse(updatedUser), nil
 }
 
 func (s *UserServiceImpl) ChangePassword(ctx context.Context, req web.UserChangePasswordRequest) error {
-	if err := s.Validate.Struct(req); err != nil {
-		return fmt.Errorf("%w: %v", errorsx.ErrValidation, err)
-	}
-	tx, err := s.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer helper.CommitOrRollback(tx)
+    tx, err := s.DB.Begin()
+    if err != nil {
+        return err
+    }
+    defer helper.CommitOrRollback(tx)
 
-	user, err := s.UserRepository.FindById(ctx, tx, req.Id)
-	if err != nil {
-		return fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
-	}
-	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)) != nil {
-		return fmt.Errorf("%w: old password incorrect", errorsx.ErrUnauthorized)
-	}
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	user.PasswordHash = string(hashed)
-	user.UpdatedAt = time.Now()
-	_ = s.UserRepository.Update(ctx, tx, user)
-	return nil
+    user, err := s.UserRepository.FindById(ctx, tx, req.Id)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
+        }
+        return err
+    }
+
+    // compare old password
+    if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
+        return fmt.Errorf("%w: invalid old password", errorsx.ErrUnauthorized)
+    }
+
+    // hash new password
+    hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+    if err != nil {
+        return err
+    }
+
+    user.PasswordHash = string(hashed)
+    user.UpdatedAt = time.Now()
+
+    _, err = s.UserRepository.Update(ctx, tx, user)
+    return err
 }
 
-func (s *UserServiceImpl) Delete(ctx context.Context, userId int) error {
+func (s *UserServiceImpl) Delete(ctx context.Context, id int) error {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		return err
 	}
 	defer helper.CommitOrRollback(tx)
 
-	if _, err := s.UserRepository.FindById(ctx, tx, userId); err != nil {
-		return fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
+	// Ensure user exists
+	_, err = s.UserRepository.FindById(ctx, tx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: user not found", errorsx.ErrNotFound)
+		}
+		return err
 	}
-	s.UserRepository.Delete(ctx, tx, userId)
+
+	// Delete using repository
+	if err := s.UserRepository.Delete(ctx, tx, id); err != nil {
+		return err
+	}
+
 	return nil
 }

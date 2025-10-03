@@ -63,90 +63,111 @@ func (uc *UserControllerImpl) Login(w http.ResponseWriter, r *http.Request, _ ht
 }
 
 func (uc *UserControllerImpl) Update(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
-	if !ok {
-		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	targetUserID, err := strconv.Atoi(params.ByName("id"))
-	if err != nil {
-		uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-	if authenticatedUserID != targetUserID {
-		uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-	var req web.UserUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-	req.Id = targetUserID
-	if err := uc.validator.Struct(req); err != nil {
-		uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
-		return
-	}
-	resp, err := uc.userService.Update(r.Context(), req)
-	if err != nil {
-		uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	uc.writeJSONResponse(w, resp, http.StatusOK)
+    authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
+    if !ok {
+        uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    targetUserID, err := strconv.Atoi(params.ByName("id"))
+    if err != nil {
+        uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+
+    // Only allow self-update
+    if authenticatedUserID != targetUserID {
+        uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
+        return
+    }
+
+    var req web.UserUpdateRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }
+
+    if err := uc.validator.Struct(req); err != nil {
+        uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
+        return
+    }
+
+    // Call service with both ID and request
+    resp, err := uc.userService.Update(r.Context(), targetUserID, req)
+    if err != nil {
+        uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    uc.writeJSONResponse(w, resp, http.StatusOK)
 }
 
+
 func (uc *UserControllerImpl) ChangePassword(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
-	if !ok {
-		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	targetUserID, err := strconv.Atoi(params.ByName("id"))
-	if err != nil {
-		uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-	if authenticatedUserID != targetUserID {
-		uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-	var req web.UserChangePasswordRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-	req.Id = targetUserID
-	if err := uc.validator.Struct(req); err != nil {
-		uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
-		return
-	}
-	if err := uc.userService.ChangePassword(r.Context(), req); err != nil {
-		uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	uc.writeJSONResponse(w, map[string]string{"message": "password changed"}, http.StatusOK)
+    authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
+    if !ok {
+        uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    targetUserID, err := strconv.Atoi(params.ByName("id"))
+    if err != nil {
+        uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+
+    if authenticatedUserID != targetUserID {
+        uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
+        return
+    }
+
+    var req web.UserChangePasswordRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        uc.writeErrorResponse(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }
+
+    // inject the user ID from params
+    req.Id = targetUserID
+
+    if err := uc.validator.Struct(req); err != nil {
+        uc.writeErrorResponse(w, fmt.Sprintf("Validation failed: %v", err), http.StatusBadRequest)
+        return
+    }
+
+    if err := uc.userService.ChangePassword(r.Context(), req); err != nil {
+        uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    uc.writeJSONResponse(w, map[string]string{"message": "Password updated successfully"}, http.StatusOK)
 }
 
 func (uc *UserControllerImpl) Delete(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
-	if !ok {
-		uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	targetUserID, err := strconv.Atoi(params.ByName("id"))
-	if err != nil {
-		uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-	if authenticatedUserID != targetUserID {
-		uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-	if err := uc.userService.Delete(r.Context(), targetUserID); err != nil {
-		uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+    authenticatedUserID, ok := middleware.GetUserIDFromContext(r.Context())
+    if !ok {
+        uc.writeErrorResponse(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    targetUserID, err := strconv.Atoi(params.ByName("id"))
+    if err != nil {
+        uc.writeErrorResponse(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+
+    // Only allow self-delete (unless admin logic is added later)
+    if authenticatedUserID != targetUserID {
+        uc.writeErrorResponse(w, "Forbidden", http.StatusForbidden)
+        return
+    }
+
+    if err := uc.userService.Delete(r.Context(), targetUserID); err != nil {
+        uc.writeErrorResponse(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    uc.writeJSONResponse(w, map[string]string{"message": "User deleted successfully"}, http.StatusOK)
 }
 
 func (uc *UserControllerImpl) FindById(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
