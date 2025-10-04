@@ -83,7 +83,7 @@ func (s *UserServiceImpl) Register(ctx context.Context, request web.UserRegister
 	}
 
 	// generate JWT token
-	token, err := helper.GenerateToken(createdUser.ID, createdUser.Email, createdUser.Role, s.TokenExpiry)
+	token, err := helper.GenerateToken(createdUser.ID, createdUser.Email, createdUser.Username, createdUser.Role, s.TokenExpiry)
 	if err != nil {
 		return web.AuthResponse{}, err
 	}
@@ -114,7 +114,7 @@ func (s *UserServiceImpl) Login(ctx context.Context, request web.UserLoginReques
 		return web.AuthResponse{}, fmt.Errorf("%w: invalid username or password", errorsx.ErrUnauthorized)
 	}
 
-	token, err := helper.GenerateToken(user.ID, user.Email, user.Role, s.TokenExpiry)
+	token, err := helper.GenerateToken(user.ID, user.Email, user.Username, user.Role, s.TokenExpiry)
 	if err != nil {
 		return web.AuthResponse{}, err
 	}
@@ -127,7 +127,7 @@ func (s *UserServiceImpl) RefreshToken(ctx context.Context, oldToken string) (we
 		return web.AuthResponse{}, err
 	}
 	// create new token
-	newToken, err := helper.GenerateToken(claims.UserID, claims.Email, claims.Role, s.TokenExpiry)
+	newToken, err := helper.GenerateToken(claims.UserID, claims.Email, claims.Username, claims.Role, s.TokenExpiry)
 	if err != nil {
 		return web.AuthResponse{}, err
 	}

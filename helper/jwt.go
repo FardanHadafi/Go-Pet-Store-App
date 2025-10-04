@@ -10,13 +10,14 @@ import (
 
 type JWTClaims struct {
 	UserID int    `json:"user_id"`
+	Username string `json:"username"`
 	Email  string `json:"email"`
 	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken receives role
-func GenerateToken(userID int, email, role string, expiryHours int) (string, error) {
+func GenerateToken(userID int, email, username, role string, expiryHours int) (string, error) {
 	secret := os.Getenv("JWT_SECRET_KEY")
 	if secret == "" {
 		return "", fmt.Errorf("JWT_SECRET_KEY not set")
@@ -26,6 +27,7 @@ func GenerateToken(userID int, email, role string, expiryHours int) (string, err
 	}
 	claims := JWTClaims{
 		UserID: userID,
+		Username: username,
 		Email:  email,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{

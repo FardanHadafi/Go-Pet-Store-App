@@ -44,7 +44,7 @@ func main() {
 	router.PUT("/api/users/:id", jwtMiddleware.Authenticate(userController.Update))
 	router.PATCH("/api/users/:id/password", jwtMiddleware.Authenticate(userController.ChangePassword))
 	router.DELETE("/api/users/:id", jwtMiddleware.Authenticate(userController.Delete))
-	router.POST("/api/users", jwtMiddleware.Authenticate(userController.FindAll))
+	router.GET("/api/users", jwtMiddleware.Authenticate(userController.FindAll))
 
 	// Admin-only users
 	router.GET("/api/admin/users", jwtMiddleware.Authenticate(jwtMiddleware.RequireRole("admin", userController.FindAll)))
